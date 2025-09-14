@@ -1,86 +1,64 @@
 import fetch from 'node-fetch'
 import { Request, Response, NextFunction } from 'express';
 // import { openaiService } from '../services/openaiService';
-import { patientService } from '../services/patientService';
-import { ChatHistory } from '../models/ChatHistory';
-// import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
-// import { strict } from 'assert';
 
 
 export const sendMessage = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    try {
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        const { message, patientId, sessionId } = req.body;
+        const currentSessionId = sessionId || uuidv4();
+        let patientContext = "";
+        const prompt = patientContext ? `${patientContext}\n\nPatient Question: ${message}` : message;
 
-    const { message, patientId, sessionId } = req.body;
-    const currentSessionId = sessionId || uuidv4();
+        // Call Gemini API
+        const apiRes = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [
+                {
+                    role: "user",
+                    parts: [{ text: prompt }],
+                },
+                ],
+            }),
+        });
 
-    // Build patient context if available
-    let patientContext = "";
-    if (patientId) {
-      const patient = await patientService.getPatientById(patientId);
-      if (patient) {
-        patientContext = `Patient Information:
-        Name: ${patient.name}
-        Age: ${patient.age}
-        Current Medications: ${patient.medicalHistory.medications.map(m => `${m.name} ${m.dosage}`).join(", ")}
-        Upcoming Appointments: ${patient.appointments.filter(a => a.status === "scheduled").length}
-        Account Balance: ${patient.billing?.balance || 0}`;
-      }
+        if (!apiRes.ok) {
+            const text = await apiRes.text();
+            throw new Error(`Gemini API error ${apiRes.status}: ${text}`);
+        }
+
+        interface GeminiResponse {
+            candidates?: {
+                content?: {
+                parts?: { text: string }[];
+                };
+            }[];
+        }
+        
+        const apiJson = (await apiRes.json()) as GeminiResponse;
+
+        const aiResponse =
+        apiJson.candidates?.[0]?.content?.parts?.[0]?.text ??
+        "Sorry, no response from Gemini.";
+
+        res.json({
+            success: true,
+            data: {
+                response: aiResponse,
+                sessionId: currentSessionId,
+            },
+        });
+    } catch (error) {
+        console.error("Chat controller error:", error);
+        next(error);
     }
-
-    const prompt = patientContext
-      ? `${patientContext}\n\nPatient Question: ${message}`
-      : message;
-
-    // Call Gemini API
-    const apiRes = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
-      }),
-    });
-
-    if (!apiRes.ok) {
-      const text = await apiRes.text();
-      throw new Error(`Gemini API error ${apiRes.status}: ${text}`);
-    }
-
-    // 👇 Gemini’s response format
-    interface GeminiResponse {
-      candidates?: {
-        content?: {
-          parts?: { text: string }[];
-        };
-      }[];
-    }
-
-    const apiJson = (await apiRes.json()) as GeminiResponse;
-
-    const aiResponse =
-      apiJson.candidates?.[0]?.content?.parts?.[0]?.text ??
-      "Sorry, no response from Gemini.";
-
-    res.json({
-      success: true,
-      data: {
-        response: aiResponse,
-        sessionId: currentSessionId,
-      },
-    });
-  } catch (error) {
-    console.error("Chat controller error:", error);
-    next(error);
-  }
 };
 
 
@@ -227,23 +205,6 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
 //     next(error);
 //   }
 // };
-
-export const getChatHistory = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { patientId, sessionId } = req.params;
-
-    const chatHistory = await ChatHistory.findOne({ patientId, sessionId });
-
-    res.json({
-      success: true,
-      data: chatHistory?.messages || []
-    });
-
-  } catch (error) {
-    console.log("Get chat history error:",error);
-    next(error);
-  }
-};
 
 
 // export const sendMessage = async (req: Request, res: Response, next: NextFunction) => {
