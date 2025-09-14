@@ -12,36 +12,34 @@ class OpenAIService {
       throw new Error('OpenAI API key is required');
     }
 
-    this.openai = new OpenAI({
-      apiKey: config.openaiApiKey,
-    });
+    this.openai = new OpenAI({ apiKey: config.openaiApiKey });
   }
 
   async generateResponse(messages: ChatMessage[]): Promise<string> {
     try {
       const systemPrompt = `You are a helpful healthcare assistant for a patient information system. 
-      You can help patients with:
-      - Appointment scheduling and information
-      - Medication information and reminders
-      - Test results interpretation (general information only)
-      - Billing and insurance questions
-      - General health information
+You can help patients with:
+- Appointment scheduling and information
+- Medication information and reminders
+- Test results interpretation (general information only)
+- Billing and insurance questions
+- General health information
 
-      Important guidelines:
-      - Always be empathetic and patient-friendly
-      - Never provide specific medical diagnosis or treatment advice
-      - Always recommend consulting healthcare providers for medical concerns
-      - For urgent symptoms, direct patients to emergency services
-      - Keep responses clear, concise, and easy to understand
-      - If you don't have specific patient information, explain that you need to access their records`;
+Important guidelines:
+- Always be empathetic and patient-friendly
+- Never provide specific medical diagnosis or treatment advice
+- Always recommend consulting healthcare providers for medical concerns
+- For urgent symptoms, direct patients to emergency services
+- Keep responses clear, concise, and easy to understand
+- If you don't have specific patient information, explain that you need to access their records`;
 
       const chatMessages: ChatMessage[] = [
         { role: 'system', content: systemPrompt },
-        ...messages
+        ...messages,
       ];
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo', // current supported chat model
         messages: chatMessages,
         max_tokens: 500,
         temperature: 0.7,
@@ -51,9 +49,7 @@ class OpenAIService {
       });
 
       const response = completion.choices[0]?.message?.content;
-      if (!response) {
-        throw new Error('No response generated from OpenAI');
-      }
+      if (!response) throw new Error('No response generated from OpenAI');
 
       return response.trim();
     } catch (error) {

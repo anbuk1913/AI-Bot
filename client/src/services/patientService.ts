@@ -1,7 +1,6 @@
 import { apiService } from './api';
 // import { Patient, Appointment, Medication, TestResult, BillingInfo } from '../types';
 import { Patient } from '../types/patient';
-import { Appointment } from '../types/patient';
 import { Medication } from '../types/patient';
 import { TestResult } from '../types/patient';
 import { BillingInfo } from '../types/patient';
@@ -12,14 +11,6 @@ class PatientService {
       return await apiService.get<Patient>(`/patient/${patientId}`);
     } catch (error) {
       throw new Error(`Failed to fetch patient information: ${error}`);
-    }
-  }
-
-  async getAppointments(patientId: string): Promise<Appointment[]> {
-    try {
-      return await apiService.get<Appointment[]>(`/patient/${patientId}/appointments`);
-    } catch (error) {
-      throw new Error(`Failed to fetch appointments: ${error}`);
     }
   }
 

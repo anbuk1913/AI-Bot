@@ -7,14 +7,6 @@ export interface Patient {
   accountBalance: number;
 }
 
-export interface Appointment {
-  date: Date;
-  doctor: string;
-  department: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  notes?: string;
-}
-
 export interface Medication {
   name: string;
   dosage: string;
