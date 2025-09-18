@@ -1,9 +1,16 @@
 export const chatService = {
-  async sendMessage(message: string, patientId?: string, sessionId?: string): Promise<{ response: string; sessionId: string }> {
+  async sendMessage(
+    message: string,
+    patientId?: string,
+    sessionId?: string
+  ): Promise<{
+    responses: Record<string, { answer: string; responseTime?: number }>;
+    sessionId: string;
+  }> {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, patientId, sessionId })
+      body: JSON.stringify({ message, patientId, sessionId }),
     });
 
     if (!res.ok) {
@@ -17,8 +24,8 @@ export const chatService = {
     }
 
     return {
-      response: data.data.response,
-      sessionId: data.data.sessionId
+      responses: data.data.responses,
+      sessionId: data.data.sessionId,
     };
-  }
+  },
 };

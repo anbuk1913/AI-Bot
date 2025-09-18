@@ -6,10 +6,11 @@ export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm your personal health assistant. How can I assist you today?",
+      content:
+        "Hello! I'm your personal health assistant. How can I assist you today?",
       sender: 'bot',
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
@@ -19,32 +20,43 @@ export const useChat = () => {
       id: Date.now().toString(),
       content,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      const { response, sessionId: newSessionId } = await chatService.sendMessage(content, patientId, sessionId);
-      setSessionId(newSessionId); // keep session
+      const { responses, sessionId: newSessionId } = await chatService.sendMessage(
+        content,
+        patientId,
+        sessionId
+      );
+      setSessionId(newSessionId);
 
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
+      // Add one bot message per API (now includes response time)
+      Object.entries(responses).forEach(([apiName, resp]) => {
+        const { answer, responseTime } = resp;
+
+        const botMessage: Message = {
+            id: (Date.now() + Math.random()).toString(),
+            content: `[${apiName.toUpperCase()}]${
+            responseTime ? ` (${responseTime} ms)` : ''
+            }: ${answer}`,
+            sender: 'bot',
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botMessage]);
+    });
     } catch (error) {
       console.error(error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I apologize, but I'm having trouble connecting right now. Please try again later.",
+        content:
+          "I apologize, but I'm having trouble connecting right now. Please try again later.",
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
