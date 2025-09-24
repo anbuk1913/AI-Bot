@@ -1,8 +1,27 @@
-import { useState } from 'react';
-import { Message } from '../types/chat';
-import { chatService } from '../services/chatService';
+import { useState } from "react";
+import { apiService } from "../services/api";
 
-export const useChat = () => {
+export type ApiOption = "openai" | "gemini" | "grok" | "deepseek";
+
+interface Message {
+  id: string;
+  content: string;
+  sender: "user" | "bot";
+  timestamp: Date;
+  responseTime?: number;
+}
+
+interface ChatResponse {
+  success: boolean;
+  data: {
+    responses: {
+      [key in ApiOption]?: { answer: string; responseTime: number };
+    };
+  };
+}
+
+export const useChat = (selectedApi: ApiOption = "openai") => {
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -13,47 +32,55 @@ export const useChat = () => {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
 
-  const sendMessage = async (content: string, patientId?: string) => {
+  const sendMessage = async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
-      sender: 'user',
+      sender: "user",
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      const { responses, sessionId: newSessionId } = await chatService.sendMessage(
-        content,
-        patientId,
-        sessionId
+      // Use apiService to call backend
+      const data: ChatResponse = await apiService.post<ChatResponse>(
+        "/chat/message",
+        {
+          message: content,
+          selectedApi,
+        }
       );
-      setSessionId(newSessionId);
-
-      // Add one bot message per API (now includes response time)
-      Object.entries(responses).forEach(([apiName, resp]) => {
-        const { answer, responseTime } = resp;
+      console.log(data);
+      console.log(selectedApi);
+      if (data.success && data.data.responses[selectedApi]) {
+        const { answer, responseTime } = data.data.responses[selectedApi]!;
 
         const botMessage: Message = {
-            id: (Date.now() + Math.random()).toString(),
-            content: `[${apiName.toUpperCase()}]${
-            responseTime ? ` (${responseTime} ms)` : ''
-            }: ${answer}`,
-            sender: 'bot',
-            timestamp: new Date(),
+          id: Date.now().toString(),
+          content: `[${selectedApi.toUpperCase()}] (${responseTime} ms): ${answer}`,
+          sender: "bot",
+          timestamp: new Date(),
+          responseTime,
         };
+
         setMessages((prev) => [...prev, botMessage]);
-    });
+      } else {
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          content: "⚠️ No response from server",
+          sender: "bot",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error sending message:", error);
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content:
-          "I apologize, but I'm having trouble connecting right now. Please try again later.",
-        sender: 'bot',
+        id: Date.now().toString(),
+        content: "❌ Error contacting server",
+        sender: "bot",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);

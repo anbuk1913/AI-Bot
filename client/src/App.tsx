@@ -6,16 +6,25 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./styles/App.css"; // Chat styles
 
-// ✅ Single Message type
+// ✅ Supported APIs
+type ApiOption = "openai" | "gemini" | "grok" | "deepseek";
+
+// ✅ Message type
 interface Message {
   id: string;
   content: string;
   sender: "user" | "bot";
   timestamp: Date;
+  responseTime?: number;
 }
 
-// Header
-const Header = () => (
+// ---------- Header with API Selector ----------
+interface HeaderProps {
+  selectedApi: ApiOption;
+  setSelectedApi: React.Dispatch<React.SetStateAction<ApiOption>>;
+}
+
+const Header: React.FC<HeaderProps> = ({ selectedApi, setSelectedApi }) => (
   <header>
     <div className="container">
       <div className="icon-container">
@@ -23,12 +32,22 @@ const Header = () => (
       </div>
       <div>
         <h1>HealthCare Assistant</h1>
+        <select
+          value={selectedApi}
+          onChange={(e) => setSelectedApi(e.target.value as ApiOption)}
+          className="api-selector"
+        >
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Gemini</option>
+          <option value="grok">Grok</option>
+          <option value="deepseek">DeepSeek</option>
+        </select>
       </div>
     </div>
   </header>
 );
 
-// Message bubble
+// ---------- Message bubble ----------
 const MessageBubble = ({ message }: { message: Message }) => {
   const isUser = message.sender === "user";
 
@@ -60,9 +79,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
               ol: (props) => (
                 <ol className="list-decimal pl-5 space-y-1" {...props} />
               ),
-              li: (props) => (
-                <li className="leading-relaxed" {...props} />
-              ),
+              li: (props) => <li className="leading-relaxed" {...props} />,
             }}
           />
         )}
@@ -71,13 +88,18 @@ const MessageBubble = ({ message }: { message: Message }) => {
             hour: "2-digit",
             minute: "2-digit",
           })}
+          {message.responseTime && (
+            <span className="ml-2 text-xs text-gray-500">
+              ⏱ {message.responseTime}ms
+            </span>
+          )}
         </p>
       </div>
     </motion.div>
   );
 };
 
-// Input
+// ---------- Chat Input ----------
 const ChatInput = ({
   onSendMessage,
   disabled,
@@ -133,9 +155,10 @@ const ChatInput = ({
   );
 };
 
-// Main app
-const App = () => {
-  const { messages, isLoading, sendMessage } = useChat();
+// ---------- Main App ----------
+const App: React.FC = () => {
+  const [selectedApi, setSelectedApi] = useState<ApiOption>("openai");
+  const { messages, isLoading, sendMessage } = useChat(selectedApi); 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -148,7 +171,7 @@ const App = () => {
 
   return (
     <div className="app">
-      <Header />
+      <Header selectedApi={selectedApi} setSelectedApi={setSelectedApi} />
       <div className="content">
         <div className="messages">
           {messages.map((m) => (

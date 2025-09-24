@@ -26,11 +26,25 @@ app.use(helmet({
 
 app.use(compression());
 
+const allowedOrigins = [
+  process.env.CLIENT_HOST_DOMAIN,
+  process.env.CLIENT_URL,
+];
+
 app.use(cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
-    optionsSuccessStatus: 200
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
+
+
+
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,

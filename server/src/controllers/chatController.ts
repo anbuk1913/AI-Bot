@@ -39,7 +39,7 @@ async function timedFetch<T>(url: string, options: any, parser: (r: any) => T): 
 
 export const sendMessage = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { message, patientId, sessionId } = req.body;
+        const { message, sessionId, selectedApi } = req.body;
         const currentSessionId = sessionId || uuidv4();
 
         let patientContext = "";
@@ -47,7 +47,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
         ? `${patientContext}\n\nPatient Question: ${message}`
         : message;
 
-        // === API KEYS & URLS ===
+        // API keys
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
@@ -60,106 +60,117 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
         const OPENAI_API_KEY = process.env.OPENAI_API_KEY!;
         const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
-        // === API CALLS WITH RESPONSE TIME ===
-        const [geminiRes, grokRes, deepSeekRes, openaiRes] = await Promise.all([
-        timedFetch<GeminiResponse>(
-            GEMINI_URL,
-            {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-            }),
-            },
-            (json) => json
-        ),
-        timedFetch<GrokResponse>(
-            GROK_URL,
-            {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${GROK_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: "grok-3",
-                messages: [{ role: "user", content: prompt }],
-            }),
-            },
-            (json) => json
-        ),
-        timedFetch<DeepSeekResponse>(
-            DEEPSEEK_URL,
-            {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [
-                { role: "system", content: "You are a helpful medical assistant." },
-                { role: "user", content: prompt },
-                ],
-            }),
-            },
-            (json) => json
-        ),
-        timedFetch<OpenAIResponse>(
-            OPENAI_URL,
-            {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${OPENAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                { role: "system", content: "You are a medical assistant." },
-                { role: "user", content: prompt },
-                ],
-            }),
-            },
-            (json) => json
-        ),
-        ]);
+        let apiResponse: { answer: string; responseTime: number } = {
+            answer: "No response",
+            responseTime: 0,
+        };
 
-        // === FORMAT RESPONSES ===
-        const geminiAnswer =
-        geminiRes.response?.candidates?.[0]?.content?.parts?.[0]?.text ??
-        "No response from Gemini.";
-
-        const grokAnswer =
-        grokRes.response?.choices?.[0]?.message?.content ??
-        "No response from Grok.";
-
-        const deepSeekAnswer =
-        deepSeekRes.response?.choices?.[0]?.message?.content ??
-        "No response from DeepSeek.";
-
-        const openaiAnswer =
-        openaiRes.response?.choices?.[0]?.message?.content ??
-        "No response from OpenAI.";
-
+        if (selectedApi === "gemini") {
+            const geminiRes = await timedFetch<GeminiResponse>(
+                GEMINI_URL,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    }),
+                },
+                (json) => json
+            );
+            apiResponse = {
+                answer:
+                geminiRes.response?.candidates?.[0]?.content?.parts?.[0]?.text ??
+                "No response from Gemini.",
+                responseTime: geminiRes.time,
+            };
+        } else if (selectedApi === "grok") {
+            const grokRes = await timedFetch<GrokResponse>(
+                GROK_URL,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${GROK_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: "grok-3",
+                        messages: [{ role: "user", content: prompt }],
+                    }),
+                },
+                (json) => json
+            );
+            apiResponse = {
+                answer:
+                grokRes.response?.choices?.[0]?.message?.content ??
+                "No response from Grok.",
+                responseTime: grokRes.time,
+            };
+        } else if (selectedApi === "deepseek") {
+            const deepSeekRes = await timedFetch<DeepSeekResponse>(
+                DEEPSEEK_URL,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                        { role: "system", content: "You are a helpful medical assistant." },
+                        { role: "user", content: prompt },
+                        ],
+                    }),
+                },
+                (json) => json
+            );
+            apiResponse = {
+                answer:
+                deepSeekRes.response?.choices?.[0]?.message?.content ??
+                "No response from DeepSeek.",
+                responseTime: deepSeekRes.time,
+            };
+        } else if (selectedApi === "openai") {
+            const openaiRes = await timedFetch<OpenAIResponse>(
+                OPENAI_URL,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${OPENAI_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini",
+                        messages: [
+                        { role: "system", content: "You are a medical assistant." },
+                        { role: "user", content: prompt },
+                        ],
+                    }),
+                },
+                (json) => json
+            );
+            apiResponse = {
+                answer:
+                openaiRes.response?.choices?.[0]?.message?.content ??
+                "No response from OpenAI.",
+                responseTime: openaiRes.time,
+            };
+        }
         res.json({
-        success: true,
-        data: {
-            responses: {
-            gemini: { answer: geminiAnswer, responseTime: geminiRes.time },
-            grok: { answer: grokAnswer, responseTime: grokRes.time },
-            deepseek: { answer: deepSeekAnswer, responseTime: deepSeekRes.time },
-            openai: { answer: openaiAnswer, responseTime: openaiRes.time },
+            success: true,
+            data: {
+                responses: {
+                [selectedApi]: apiResponse,
+                },
+                sessionId: currentSessionId,
             },
-            sessionId: currentSessionId,
-        },
         });
     } catch (error) {
         console.error("Chat controller error:", error);
         next(error);
     }
 };
+
 
 
 

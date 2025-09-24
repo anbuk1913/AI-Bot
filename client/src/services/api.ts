@@ -38,7 +38,6 @@ class ApiService {
         // Handle common errors
         if (error.response?.status === 401) {
           localStorage.removeItem('token');
-          // Redirect to login or show auth error
         }
         
         return Promise.reject({
@@ -54,10 +53,12 @@ class ApiService {
     return response.data as T;
   }
 
-  async post<T>(url: string): Promise<T> {
-    const response = await this.client.post<T>(url);
+  async post<T, D = unknown>(url: string, data?: D): Promise<T> {
+    const response = await this.client.post<T>(url, data);
     return response.data as T;
   }
+
+
 
   async put<T>(url: string, data?: string): Promise<T> {
     const response = await this.client.put<T>(url, data);
