@@ -1,6 +1,11 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+
+const API_BASE_URL = process.env.VITE_API_URL!
+const PORT = process.env.PORT! ? parseInt(process.env.PORT, 10) : undefined;
 
 export default defineConfig({
   plugins: [react()],
@@ -10,15 +15,15 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: PORT,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: API_BASE_URL,
         changeOrigin: true,
         secure: false,
       },
     },
-    allowedHosts: ['imbedsoftware.shop'],
+    allowedHosts: [],
   },
   build: {
     outDir: 'dist',

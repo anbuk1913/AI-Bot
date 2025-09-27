@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiService } from "../services/api";
 
 export type ApiOption = "openai" | "gemini" | "grok" | "deepseek";
@@ -8,20 +8,27 @@ interface Message {
   content: string;
   sender: "user" | "bot";
   timestamp: Date;
-  responseTime?: number;
+  contexts?: string[];
 }
 
 interface ChatResponse {
   success: boolean;
   data: {
     responses: {
-      [key in ApiOption]?: { answer: string; responseTime: number };
+      [key in ApiOption]?: { answer: string };
     };
   };
 }
 
+interface ChatRequest {
+  message: string;
+  selectedApi: ApiOption;
+  userId: string | null;
+  contexts?: string[];
+}
+
 export const useChat = (selectedApi: ApiOption = "openai") => {
-  
+  const [history, setHistory] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -33,39 +40,83 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async (content: string) => {
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        if (!userId) return;
+
+        const res = await apiService.get<{ success: boolean; data: string[]; message?: string }>(
+          `/chat/history/${userId}`
+        );
+
+        if (res.success && res.data) {
+          setHistory(res.data);
+        }
+      } catch (error) {
+        console.error("Error fetching history:", error);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  const refreshHistory = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      const res = await apiService.get<{ success: boolean; data: string[]; message?: string }>(
+        `/chat/history/${userId}`
+      );
+
+      if (res.success && res.data) {
+        setHistory(res.data);
+      }
+    } catch (error) {
+      console.error("Error refreshing history:", error);
+    }
+  };
+
+  const sendMessage = async (content: string, contexts: string[] = []) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
       sender: "user",
       timestamp: new Date(),
+      contexts: contexts.length > 0 ? [...contexts] : undefined,
     };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      // Use apiService to call backend
+      const userId: string | null = localStorage.getItem("userId");
+      const requestPayload: ChatRequest = {
+        message: content,
+        userId,
+        selectedApi,
+        ...(contexts.length > 0 && { contexts })
+      };
+
       const data: ChatResponse = await apiService.post<ChatResponse>(
         "/chat/message",
-        {
-          message: content,
-          selectedApi,
-        }
+        requestPayload
       );
-      console.log(data);
-      console.log(selectedApi);
+
       if (data.success && data.data.responses[selectedApi]) {
-        const { answer, responseTime } = data.data.responses[selectedApi]!;
+        const { answer } = data.data.responses[selectedApi]!;
 
         const botMessage: Message = {
           id: Date.now().toString(),
-          content: `[${selectedApi.toUpperCase()}] (${responseTime} ms): ${answer}`,
+          content: `${answer}`,
           sender: "bot",
           timestamp: new Date(),
-          responseTime,
         };
 
         setMessages((prev) => [...prev, botMessage]);
+        
+        await refreshHistory();
+        
       } else {
         const errorMessage: Message = {
           id: Date.now().toString(),
@@ -75,6 +126,7 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
         };
         setMessages((prev) => [...prev, errorMessage]);
       }
+      
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
@@ -89,5 +141,10 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
     }
   };
 
-  return { messages, isLoading, sendMessage };
+  return { 
+    history, 
+    messages, 
+    isLoading, 
+    sendMessage,
+  };
 };

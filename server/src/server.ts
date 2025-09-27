@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 dotenv.config();
 import { errorHandler } from './middleware/errorHandler';
+import connectDB from './config/mongoose'
 import chatRoutes from './routes/chatRoutes';
 
 
@@ -43,9 +44,6 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-
-
-
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -73,8 +71,9 @@ const startServer = async () => {
     try {
         app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`)
-        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+        console.log(`Environment: ${process.env.NODE_ENV!}`)
         });
+        connectDB()
     } catch (error) {
         console.log('Failed to start server:', error);
         process.exit(1);
