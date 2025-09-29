@@ -3,10 +3,13 @@
 }
 
  body {
- font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #007bff 0%, #00c4b4 100%); color: #333; overflow-x: hidden; 
+ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #007bff 0%, #00c4b4 100%);
+   color: #333; overflow-x: hidden; 
 }
  /* Hero Section */ .hero {
- min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 20px; position: relative; background: linear-gradient(135deg, #007bff 0%, #00c4b4 100%); 
+ min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 20px; position: relative; 
+ background: linear-gradient(135deg, #1d3045 0%, rgb(13, 11, 63) 100%); 
 }
  .hero-content {
  position: relative; z-index: 2; max-width: 900px; animation: fadeInUp 1s ease; 
@@ -45,7 +48,7 @@
  color: rgba(255, 255, 255, 0.8); font-size: 0.95rem; line-height: 1.5; 
 }
  .cta-button {
- background: linear-gradient(135deg, #00c4b4 0%, #007bff 100%); color: white; padding: 18px 45px; border-radius: 50px; text-decoration: none; font-size: 1.2rem; font-weight: 600; transition: all 0.3s ease; display: inline-block; box-shadow: 0 10px 30px rgba(0, 196, 180, 0.4); 
+ background: linear-gradient(135deg, rgb(19, 47, 101) 0%, #112836 100%); color: white; padding: 18px 45px; border-radius: 50px; text-decoration: none; font-size: 1.2rem; font-weight: 600; transition: all 0.3s ease; display: inline-block; box-shadow: 0 10px 30px rgba(0, 196, 180, 0.4); 
 }
  .cta-button:hover {
  transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0, 196, 180, 0.6); 

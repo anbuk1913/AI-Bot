@@ -2,7 +2,7 @@ import OpenAI from "openai"
 import fetch from "node-fetch";
 import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { saveContext } from "../services/contextService"
+import { saveHistory } from "../services/contextService"
 
 interface GeminiResponse {
   candidates?: { content?: { parts?: { text: string }[] } }[];
@@ -75,6 +75,7 @@ Patient Question: ${message}`;
 }
 
 export const sendMessage = async (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.body);
     try {
         const { message, sessionId, selectedApi, contexts } = req.body;
         const currentSessionId = sessionId || uuidv4();
@@ -188,7 +189,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
                 "No response from OpenAI.",
             };
         }
-        saveContext(req.body.userId , req.body.message)
+        saveHistory(req.body.userId , req.body.message)
         res.json({
             success: true,
             data: {

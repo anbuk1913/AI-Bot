@@ -25,6 +25,7 @@ interface ChatRequest {
   selectedApi: ApiOption;
   userId: string | null;
   contexts?: string[];
+  history?:string[];
 }
 
 export const useChat = (selectedApi: ApiOption = "openai") => {
@@ -78,7 +79,7 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
     }
   };
 
-  const sendMessage = async (content: string, contexts: string[] = []) => {
+  const sendMessage = async (content: string, contexts: string[] = [], history: string[] = []) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -95,7 +96,8 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
         message: content,
         userId,
         selectedApi,
-        ...(contexts.length > 0 && { contexts })
+        ...(contexts.length > 0 && { contexts }),
+        ...(history.length > 0 && { history }),
       };
 
       const data: ChatResponse = await apiService.post<ChatResponse>(
@@ -141,7 +143,9 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
     }
   };
 
-  return { 
+
+
+  return {
     history, 
     messages, 
     isLoading, 

@@ -7,11 +7,12 @@ export const validateChatMessage = (req: Request, res: Response, next: NextFunct
     patientId: Joi.string().optional(),
     selectedApi: Joi.string().optional(),
     userId: Joi.string(),
+    history: Joi.array().items(Joi.string().min(1).max(200)).optional(),
     contexts: Joi.array()
       .items(Joi.string().min(1).max(200))
       .optional()
       .max(20)
-      .unique()
+      .unique(),
   });
 
   const { error } = schema.validate(req.body);

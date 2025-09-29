@@ -2,21 +2,23 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IContext extends Document {
   userId: string;
-  data: string[];
+  history: string[];
+  context: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ContextSchema: Schema<IContext> = new Schema(
+const userSchema: Schema<IContext> = new Schema(
   {
     userId: { type: String, unique: true },
-    data: { type: [String], required: true },
+    history: { type: [String], required: true },
+    context: { type: [String], required: true },
   },
   {
     timestamps: true,
   }
 );
 
-const Context: Model<IContext> = mongoose.model<IContext>("Context", ContextSchema);
+const User: Model<IContext> = mongoose.model<IContext>("Patient-Data", userSchema);
 
-export default Context;
+export default User;
