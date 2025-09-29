@@ -1416,6 +1416,57 @@ body::before {
   }
 }
 
+@media (prefers-color-scheme: light) {
+  .chat-header,
+  .sidebar,
+  .chat-input-container {
+    background: rgba(26, 26, 46, 0.98);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .welcome-content,
+  .bot-bubble,
+  .context-input,
+  .message-input {
+    background: rgba(30, 41, 59, 0.98);
+    color: #f8fafc;
+  }
+
+  .app-subtitle,
+  .sidebar-title h3 {
+    background: linear-gradient(135deg, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .history-item,
+  .add-context-btn.active {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #f8fafc;
+  }
+
+  .api-selector {
+    background: rgba(29, 27, 50, 0.95);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #85858f;
+  }
+
+  .history-text,
+  .message-text,
+  .welcome-content p,
+  .empty-sidebar p {
+    color: #cbd5e1;
+  }
+
+  .toggle-btn {
+    background: rgba(30, 41, 59, 0.98);
+    border-color: #60a5fa;
+    color: #60a5fa;
+  }
+}
+
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   * {
