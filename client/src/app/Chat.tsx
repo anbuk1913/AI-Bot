@@ -202,7 +202,7 @@ const RightSidebar = ({
       <div className="sidebar-header">
         <div className="sidebar-title">
           <Settings className="sidebar-icon" />
-          <h3>Personal Context</h3>
+          <h3>Context</h3>
         </div>
         <button onClick={onClose} className="close-btn">
           <X size={18} />
@@ -212,7 +212,7 @@ const RightSidebar = ({
         <div className="context-input-section">
           <input
             type="text"
-            placeholder="e.g., Age 35, Diabetic, Morning medication"
+            placeholder="Medical history notes"
             value={contextInput}
             onChange={(e) => setContextInput(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -281,15 +281,17 @@ const RightSidebar = ({
 const ChatInput = ({
   onSendMessage,
   disabled,
+  hasSelectedHistory,
 }: {
   onSendMessage: (message: string) => void;
   disabled: boolean;
+  hasSelectedHistory: boolean;
 }) => {
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = () => {
-    if (message.trim() && !disabled) {
+    if ((message.trim() || hasSelectedHistory) && !disabled) {
       onSendMessage(message.trim());
       setMessage("");
     }
@@ -323,8 +325,8 @@ const ChatInput = ({
         />
         <button
           onClick={handleSubmit}
-          disabled={disabled || !message.trim()}
-          className={`send-button ${disabled || !message.trim() ? "disabled" : "active"}`}
+          disabled={disabled || (!message.trim() && !hasSelectedHistory)}
+          className={`send-button ${disabled || (!message.trim() && !hasSelectedHistory) ? "disabled" : "active"}`}
         >
           {disabled ? (
             <Loader2 className="button-icon spinning" />
@@ -519,7 +521,11 @@ const Chat: React.FC = () => {
             </div>
           </div>
 
-          <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+          <ChatInput 
+            onSendMessage={handleSendMessage} 
+            disabled={isLoading}
+            hasSelectedHistory={selectedHistory.length > 0}
+          />
         </main>
 
         <RightSidebar

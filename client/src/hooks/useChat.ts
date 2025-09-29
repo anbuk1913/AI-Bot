@@ -99,12 +99,11 @@ export const useChat = (selectedApi: ApiOption = "openai") => {
         ...(contexts.length > 0 && { contexts }),
         ...(history.length > 0 && { history }),
       };
-
       const data: ChatResponse = await apiService.post<ChatResponse>(
         "/chat/message",
         requestPayload
       );
-
+      console.log("data");
       if (data.success && data.data.responses[selectedApi]) {
         const { answer } = data.data.responses[selectedApi]!;
 

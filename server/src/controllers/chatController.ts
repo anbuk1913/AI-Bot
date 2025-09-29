@@ -75,9 +75,9 @@ Patient Question: ${message}`;
 }
 
 export const sendMessage = async (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.body);
     try {
-        const { message, sessionId, selectedApi, contexts } = req.body;
+        console.log(req.body);
+        const { message, sessionId, selectedApi, contexts, history } = req.body;
         const currentSessionId = sessionId || uuidv4();
 
         const prompt = buildPrompt(message, contexts);
@@ -99,7 +99,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
         };
 
         if (selectedApi === "gemini") {
-            const newPrompt = geminiPrompt(message,contexts)
+            const newPrompt = geminiPrompt(message,[...contexts,...history])
             const geminiRes = await timedFetch<GeminiResponse>(
                 GEMINI_URL,
                 {
@@ -111,7 +111,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
                 },
                 (json) => json
             );
-            console.log(geminiRes);
+            // console.log(geminiRes);
             apiResponse = {
                 answer:
                 geminiRes.response?.candidates?.[0]?.content?.parts?.[0]?.text ??
@@ -123,7 +123,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
                 baseURL: GROK_URL,
             });
             
-            const systemMessage = buildSystemMessage(contexts) 
+            const systemMessage = buildSystemMessage(...contexts,...history) 
                 
             const completion: OpenAI.Chat.Completions.ChatCompletion =
             await client.chat.completions.create({
@@ -139,7 +139,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
                 "No response from Grok AI.",
             };
         } else if (selectedApi === "deepseek") {
-            const systemMessage = buildSystemMessage(contexts)
+            const systemMessage = buildSystemMessage(...contexts,...history)
             const deepSeekRes = await timedFetch<DeepSeekResponse>(
                 DEEPSEEK_URL,
                 {

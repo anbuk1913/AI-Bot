@@ -82,7 +82,6 @@ export const removeContext = async (req: Request, res: Response, next: NextFunct
 
 export const getContext = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log(req.params);
     const { userId } = req.params;
     if (userId) {
       const his = await getContextData(userId);

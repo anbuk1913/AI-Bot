@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 export const validateChatMessage = (req: Request, res: Response, next: NextFunction) => {
   const schema = Joi.object({
-    message: Joi.string().required().min(1).max(1000),
+    message: Joi.string().required().min(1).max(1000).optional(),
     patientId: Joi.string().optional(),
     selectedApi: Joi.string().optional(),
     userId: Joi.string(),
